@@ -55,7 +55,7 @@ public class AllDevicesActivity extends AppCompatActivity {
             requestPermission(Manifest.permission.BLUETOOTH, 1);
             //return;
         }
-        pairedDevices = bluetoothAdapter.getBondedDevices();
+        retrieveBondedDevices();
         /*if (pairedDevices.size() > 0) {
             // There are paired devices. Get the name and address of each paired device.
             for (BluetoothDevice device : pairedDevices) {
@@ -71,10 +71,23 @@ public class AllDevicesActivity extends AppCompatActivity {
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
         registerReceiver(receiver, filter);
-        bluetoothAdapter.startDiscovery();
+        //bluetoothAdapter.startDiscovery();
 
 
     }
+
+    private void retrieveBondedDevices() {
+        pairedDevices = bluetoothAdapter.getBondedDevices();
+
+        if (pairedDevices.size() > 0) {
+            // There are paired devices. Get the name and address of each paired device.
+            for (BluetoothDevice device : pairedDevices) {
+                devices.add(new Device(device.getName(), device.getAddress()));
+            }
+            adapter.setDevices(devices);
+        }
+    }
+
     // Create a BroadcastReceiver for ACTION_FOUND.
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -101,6 +114,10 @@ public class AllDevicesActivity extends AppCompatActivity {
                 }
                 //String deviceName = device.getName();
                 //String deviceHardwareAddress = device.getAddress(); // MAC address
+                /*if (device1.getBondState()!=BluetoothDevice.BOND_BONDED)
+                {
+
+                }*/
                 Device item = new Device(device.getName(), device.getAddress());
                 item.setBtdevice(device);
                 boolean containsItem = false;
@@ -111,12 +128,11 @@ public class AllDevicesActivity extends AppCompatActivity {
                     }
                 }
                 if(!containsItem) {
-                    DatabaseHelper databaseHelper = new DatabaseHelper(AllDevicesActivity.this);
+
                     devices.add(item);
                     item.setBtdevice(device);
                     adapter.setDevices(devices);
-                    boolean b = databaseHelper.addDevice(item);
-                    Toast.makeText(context, "Added to the local database " + b, Toast.LENGTH_SHORT).show();
+
                 }
 
 

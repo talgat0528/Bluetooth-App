@@ -1,5 +1,6 @@
 package com.example.bluetoothapp;
 
+import static com.example.bluetoothapp.DeviceActivity.DEVICE_ADDRESS;
 import static com.example.bluetoothapp.DeviceActivity.DEVICE_NAME;
 import static com.example.bluetoothapp.DeviceActivity.DEVICE_OBJECT;
 
@@ -46,7 +47,7 @@ public class DeviceRecViewAdapter extends RecyclerView.Adapter<DeviceRecViewAdap
             public void onClick(View view) {
                 Intent intent = new Intent(mContext,DeviceActivity.class);
                 //intent.putExtra(DEVICE_NAME, devices.get(holder.getAdapterPosition()).getName());
-                intent.putExtra(DEVICE_OBJECT, (Serializable) devices.get(holder.getAdapterPosition()));
+                intent.putExtra(DEVICE_ADDRESS, devices.get(holder.getAdapterPosition()).getAddress());
                 mContext.startActivity(intent);
             }
         });

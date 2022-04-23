@@ -13,21 +13,27 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.View;
+import android.view.ViewStub;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.UUID;
 
 public class DeviceActivity extends AppCompatActivity {
 
     public static final String DEVICE_NAME = "deviceName";
     public static final String DEVICE_OBJECT = "deviceObject";
-    UUID uuid = UUID.fromString("31385f4a-83c1-4970-8436-09d8a132774c");
+    public static final String DEVICE_ADDRESS = "deviceAddress";
+    public static final UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private static final int STATE_CONNECTED = 1;
     private static final int STATE_CONNECTION_FAILED = 2;
+    private static final int STATE_DISCONNECTED = 3;
     private Button btnConnectToDevice, btnDiscFromDevice;
     private TextView txtDeviceTitle;
     private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -42,7 +48,7 @@ public class DeviceActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         if (intent != null) {
-            Device deviceObj = (Device) intent.getExtras().getSerializable(DEVICE_OBJECT);
+            String deviceAddress = intent.getStringExtra(DEVICE_ADDRESS);
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                 // TODO: Consider calling
                 //    ActivityCompat#requestPermissions
@@ -53,8 +59,10 @@ public class DeviceActivity extends AppCompatActivity {
                 // for ActivityCompat#requestPermissions for more details.
 
             }
-            txtDeviceTitle.setText(deviceObj.getName());
-            btDevice = deviceObj.getBtdevice();
+            btDevice = bluetoothAdapter.getRemoteDevice(deviceAddress);
+
+
+            txtDeviceTitle.setText(btDevice.getName());
         }
         btnConnectToDevice.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -80,11 +88,26 @@ public class DeviceActivity extends AppCompatActivity {
                 case STATE_CONNECTED:
                     //set the text
                     Toast.makeText(DeviceActivity.this, "CONNECTED", Toast.LENGTH_SHORT).show();
+                    btnConnectToDevice.setVisibility(View.GONE);
+                    btnDiscFromDevice.setVisibility(View.VISIBLE);
+                    DatabaseHelper databaseHelper = new DatabaseHelper(DeviceActivity.this);
+                    boolean b = databaseHelper.addDevice(new Device(btDevice.getName(), btDevice.getAddress()));
+                    Toast.makeText(DeviceActivity.this, "Data added to the local database: " + b, Toast.LENGTH_SHORT).show();
+                    SendToCloudHelper sendToCloudHelper = new SendToCloudHelper();
+                    if (ActivityCompat.checkSelfPermission(DeviceActivity.this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermission(Manifest.permission.INTERNET, 1);
+
+                    }
+                    sendToCloudHelper.sendData();
                     break;
                 case STATE_CONNECTION_FAILED:
                     //set the text
                     Toast.makeText(DeviceActivity.this, "CONNECTION FAILED", Toast.LENGTH_SHORT).show();
                     break;
+                case STATE_DISCONNECTED:
+                    Toast.makeText(DeviceActivity.this, "DISCONNECTED", Toast.LENGTH_SHORT).show();
+                    btnConnectToDevice.setVisibility(View.VISIBLE);
+                    btnDiscFromDevice.setVisibility(View.GONE);
                 default:
                     break;
             }
@@ -118,8 +141,8 @@ public class DeviceActivity extends AppCompatActivity {
 
         public ConnectThread(BluetoothDevice device) {
 
-            device1 = device;
-            try {
+            device1 = bluetoothAdapter.getRemoteDevice(device.getAddress());
+            /*try {
                 if (ActivityCompat.checkSelfPermission(DeviceActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     // TODO: Consider calling
                     //    ActivityCompat#requestPermissions
@@ -131,11 +154,34 @@ public class DeviceActivity extends AppCompatActivity {
                     requestPermission(Manifest.permission.BLUETOOTH, 1);
                 }
 
-                socket = device1.createRfcommSocketToServiceRecord(uuid);
-                //socket = device1.createInsecureRfcommSocketToServiceRecord(uuid);
+                //socket = device1.createRfcommSocketToServiceRecord(uuid);
+
+                socket = device1.createInsecureRfcommSocketToServiceRecord(uuid);
             } catch (IOException e) {
                 e.printStackTrace();
+            }*/
+            try {
+                socket = (BluetoothSocket) device1.getClass().getMethod("createRfcommSocket", new Class[] { int.class } ).invoke(device1, 10);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
             }
+            /*Method m = null;
+            try {
+                m = device1.getClass().getMethod("createRfcommSocket", int.class);
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            }
+            try {
+                socket = (BluetoothSocket) m.invoke(device1, 1);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }*/
         }
 
         public void run() {
@@ -149,19 +195,37 @@ public class DeviceActivity extends AppCompatActivity {
                 // for ActivityCompat#requestPermissions for more details.
 
             }
-            if (bluetoothAdapter.isDiscovering()) {
-                bluetoothAdapter.cancelDiscovery();
-            }
+
+            bluetoothAdapter.cancelDiscovery();
+
             try {
+
                 socket.connect();
                 Message message = Message.obtain();
                 message.what = STATE_CONNECTED;
                 btHandler.sendMessage(message);
+
             } catch (IOException e) {
                 e.printStackTrace();
                 Message message = Message.obtain();
                 message.what = STATE_CONNECTION_FAILED;
                 btHandler.sendMessage(message);
+            }
+            btnDiscFromDevice.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    cancel();
+                    Message message = Message.obtain();
+                    message.what = STATE_DISCONNECTED;
+                    btHandler.sendMessage(message);
+                }
+            });
+        }
+        public void cancel() {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                Log.e("SOCKET PROBLEM", "Could not close the client socket", e);
             }
         }
     }
