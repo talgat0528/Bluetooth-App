@@ -18,7 +18,7 @@ public class SendToCloudHelper {
 
 
     public static final String mockServer = "https://8a56f495-e1ec-4849-941c-8aab59c4631f.mock.pstmn.io/device";
-
+    // TODO: Send actual data
     public void sendData() {
         OkHttpClient client = new OkHttpClient().newBuilder()
                 .build();

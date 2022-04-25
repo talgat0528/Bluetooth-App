@@ -1,5 +1,7 @@
 package com.example.bluetoothapp;
 
+import static com.example.bluetoothapp.DeviceActivity.DEVICE_ADDRESS;
+
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -28,10 +30,10 @@ import android.widget.Toast;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 public class MainActivity extends AppCompatActivity {
-
+    public static final String WHICH_BLUETOOTH = "whichBluetooth";
     private static final String TAG = "CHECK";
     // declare
-    private Button btnScan, btnHistory;
+    private Button btnScan, btnHistory, btnLeScan;
     private SwitchMaterial switchBluetooth;
     BluetoothManager bluetoothManager;
     BluetoothAdapter bluetoothAdapter;
@@ -78,7 +80,16 @@ public class MainActivity extends AppCompatActivity {
                 // 1. need to pass a context as a src. MainActivity is a context here
                 // 2. a destination of another activity
                 Intent intent = new Intent(MainActivity.this, AllDevicesActivity.class);
+                intent.putExtra(WHICH_BLUETOOTH, "notBleScan");
                 // inner method every activity has
+                startActivity(intent);
+            }
+        });
+        btnLeScan.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, AllDevicesActivity.class);
+                intent.putExtra(WHICH_BLUETOOTH, "BleScan");
                 startActivity(intent);
             }
         });
@@ -106,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
     private void initViews() {
         //inner method
         btnScan = findViewById(R.id.btnScan);
+        btnLeScan = findViewById(R.id.btnLeScan);
         btnHistory = findViewById(R.id.btnHistory);
         switchBluetooth = findViewById(R.id.switchBluetooth);
         bluetoothManager = getSystemService(BluetoothManager.class);
