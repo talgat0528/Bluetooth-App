@@ -1,5 +1,6 @@
 package com.example.bluetoothapp;
 
+import static com.example.bluetoothapp.AllDevicesActivity.BLUETOOTH_PERMISSION;
 import static com.example.bluetoothapp.DeviceActivity.DEVICE_ADDRESS;
 
 import androidx.annotation.Nullable;
@@ -26,6 +27,7 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,6 +59,7 @@ public class BleDeviceActivity extends AppCompatActivity {
             bluetoothService = null;
         }
     };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,12 +71,14 @@ public class BleDeviceActivity extends AppCompatActivity {
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
+
     class BluetoothLeService extends Service {
         public static final String TAG = "BluetoothLeService";
         public final static String ACTION_GATT_CONNECTED = "ACTION_GATT_CONNECTED";
         public final static String ACTION_GATT_DISCONNECTED = "ACTION_GATT_DISCONNECTED";
         public final static String ACTION_GATT_SERVICES_DISCOVERED = "ACTION_GATT_SERVICES_DISCOVERED";
-        public static final String ACTION_DATA_AVAILABLE = "ACTION_DATA_AVAILABLE";;
+        public static final String ACTION_DATA_AVAILABLE = "ACTION_DATA_AVAILABLE";
+        ;
         private static final int STATE_DISCONNECTED = 0;
         private static final int STATE_CONNECTED = 2;
 
@@ -81,10 +86,12 @@ public class BleDeviceActivity extends AppCompatActivity {
         private int connectionState;
         private BluetoothAdapter bluetoothAdapter;
         private BluetoothGatt bluetoothGatt;
+
         public List<BluetoothGattService> getSupportedGattServices() {
             if (bluetoothGatt == null) return null;
             return bluetoothGatt.getServices();
         }
+
         public boolean initialize() {
             bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
             if (bluetoothAdapter == null) {
@@ -93,6 +100,7 @@ public class BleDeviceActivity extends AppCompatActivity {
             }
             return true;
         }
+
         private Binder binder = new LocalBinder();
 
         @Nullable
@@ -106,6 +114,7 @@ public class BleDeviceActivity extends AppCompatActivity {
                 return BluetoothLeService.this;
             }
         }
+
         @Override
         public boolean onUnbind(Intent intent) {
             close();
@@ -116,9 +125,13 @@ public class BleDeviceActivity extends AppCompatActivity {
             if (bluetoothGatt == null) {
                 return;
             }
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
+                requestPermission(Manifest.permission.BLUETOOTH, BLUETOOTH_PERMISSION);
+            }
             bluetoothGatt.close();
             bluetoothGatt = null;
         }
+
         public boolean connect(final String address) {
             if (bluetoothAdapter == null || address == null) {
                 Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
@@ -127,6 +140,9 @@ public class BleDeviceActivity extends AppCompatActivity {
 
             try {
                 final BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermission(Manifest.permission.BLUETOOTH, BLUETOOTH_PERMISSION);
+                }
                 bluetoothGatt = device.connectGatt(this, false, bluetoothGattCallback);
                 return true;
             } catch (IllegalArgumentException exception) {
@@ -135,6 +151,7 @@ public class BleDeviceActivity extends AppCompatActivity {
             }
             // connect to the GATT server on the device
         }
+
         private final BluetoothGattCallback bluetoothGattCallback = new BluetoothGattCallback() {
             @Override
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
@@ -143,6 +160,9 @@ public class BleDeviceActivity extends AppCompatActivity {
                     connectionState = STATE_CONNECTED;
                     broadcastUpdate(ACTION_GATT_CONNECTED);
                     // Attempts to discover services after successful connection.
+                    if (ActivityCompat.checkSelfPermission(BleDeviceActivity.this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermission(Manifest.permission.BLUETOOTH, BLUETOOTH_PERMISSION);
+                    }
                     bluetoothGatt.discoverServices();
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     // disconnected from the GATT Server
@@ -150,6 +170,7 @@ public class BleDeviceActivity extends AppCompatActivity {
                     broadcastUpdate(ACTION_GATT_DISCONNECTED);
                 }
             }
+
             @Override
             public void onServicesDiscovered(BluetoothGatt gatt, int status) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -158,87 +179,23 @@ public class BleDeviceActivity extends AppCompatActivity {
                     Log.w(TAG, "onServicesDiscovered received: " + status);
                 }
             }
-            /*@Override
-            public void onCharacteristicRead(
-                    BluetoothGatt gatt,
-                    BluetoothGattCharacteristic characteristic,
-                    int status
-            ) {
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
-                }
-            }*/
-            /*@Override
-            public void onCharacteristicChanged(
-                    BluetoothGatt gatt,
-                    BluetoothGattCharacteristic characteristic
-            ) {
-                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
-            }*/
         };
 
         private void broadcastUpdate(final String action) {
             final Intent intent = new Intent(action);
             sendBroadcast(intent);
         }
-        /*private void broadcastUpdate(final String action,
-                                     final BluetoothGattCharacteristic characteristic) {
-            final Intent intent = new Intent(action);
-
-            // This is special handling for the Heart Rate Measurement profile. Data
-            // parsing is carried out as per profile specifications.
-            if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
-                int flag = characteristic.getProperties();
-                int format = -1;
-                if ((flag & 0x01) != 0) {
-                    format = BluetoothGattCharacteristic.FORMAT_UINT16;
-                    Log.d(TAG, "Heart rate format UINT16.");
-                } else {
-                    format = BluetoothGattCharacteristic.FORMAT_UINT8;
-                    Log.d(TAG, "Heart rate format UINT8.");
-                }
-                final int heartRate = characteristic.getIntValue(format, 1);
-                Log.d(TAG, String.format("Received heart rate: %d", heartRate));
-                intent.putExtra(EXTRA_DATA, String.valueOf(heartRate));
-            } else {
-                // For all other profiles, writes the data formatted in HEX.
-                final byte[] data = characteristic.getValue();
-                if (data != null && data.length > 0) {
-                    final StringBuilder stringBuilder = new StringBuilder(data.length);
-                    for(byte byteChar : data)
-                        stringBuilder.append(String.format("%02X ", byteChar));
-                    intent.putExtra(EXTRA_DATA, new String(data) + "\n" +
-                            stringBuilder.toString());
-                }
-            }
-            sendBroadcast(intent);
-        }*/
-
         public void readCharacteristic(BluetoothGattCharacteristic characteristic) {
             if (bluetoothGatt == null) {
                 Log.w(TAG, "BluetoothGatt not initialized");
                 return;
             }
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
+                requestPermission(Manifest.permission.BLUETOOTH, BLUETOOTH_PERMISSION);
+            }
             bluetoothGatt.readCharacteristic(characteristic);
         }
-        /*public void setCharacteristicNotification(BluetoothGattCharacteristic characteristic,boolean enabled) {
-            if (bluetoothGatt == null) {
-                Log.w(TAG, "BluetoothGatt not initialized");
-                Return;
-            }
-            bluetoothGatt.setCharacteristicNotification(characteristic, enabled);
-
-            // This is specific to Heart Rate Measurement.
-            if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
-                BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
-                descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                bluetoothGatt.writeDescriptor(descriptor);
-            }
-        }*/
     }
-
-
-
 
     private final BroadcastReceiver gattUpdateReceiver = new BroadcastReceiver() {
         @Override
@@ -257,54 +214,9 @@ public class BleDeviceActivity extends AppCompatActivity {
         }
     };
     // TODO: display results properly
-    /*private void displayGattServices(List<BluetoothGattService> gattServices) {
-        if (gattServices == null) return;
-        String uuid = null;
-        String unknownServiceString = getResources().
-                getString(R.string.unknown_service);
-        String unknownCharaString = getResources().
-                getString(R.string.unknown_characteristic);
-        ArrayList<HashMap<String, String>> gattServiceData =
-                new ArrayList<HashMap<String, String>>();
-        ArrayList<ArrayList<HashMap<String, String>>> gattCharacteristicData
-                = new ArrayList<ArrayList<HashMap<String, String>>>();
-        mGattCharacteristics =
-                new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
+    private void displayGattServices(List<BluetoothGattService> gattServices) {
 
-        // Loops through available GATT Services.
-        for (BluetoothGattService gattService : gattServices) {
-            HashMap<String, String> currentServiceData =
-                    new HashMap<String, String>();
-            uuid = gattService.getUuid().toString();
-            currentServiceData.put(
-                    LIST_NAME, SampleGattAttributes.
-                            lookup(uuid, unknownServiceString));
-            currentServiceData.put(LIST_UUID, uuid);
-            gattServiceData.add(currentServiceData);
-
-            ArrayList<HashMap<String, String>> gattCharacteristicGroupData =
-                    new ArrayList<HashMap<String, String>>();
-            List<BluetoothGattCharacteristic> gattCharacteristics =
-                    gattService.getCharacteristics();
-            ArrayList<BluetoothGattCharacteristic> charas =
-                    new ArrayList<BluetoothGattCharacteristic>();
-            // Loops through available Characteristics.
-            for (BluetoothGattCharacteristic gattCharacteristic :
-                    gattCharacteristics) {
-                charas.add(gattCharacteristic);
-                HashMap<String, String> currentCharaData =
-                        new HashMap<String, String>();
-                uuid = gattCharacteristic.getUuid().toString();
-                currentCharaData.put(
-                        LIST_NAME, SampleGattAttributes.lookup(uuid,
-                                unknownCharaString));
-                currentCharaData.put(LIST_UUID, uuid);
-                gattCharacteristicGroupData.add(currentCharaData);
-            }
-            mGattCharacteristics.add(charas);
-            gattCharacteristicData.add(gattCharacteristicGroupData);
-        }
-    }*/
+    }
 
     @Override
     protected void onResume() {
@@ -329,5 +241,39 @@ public class BleDeviceActivity extends AppCompatActivity {
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
         return intentFilter;
     }
+    private void requestPermission(String permissionName, int permissionRequestCode) {
+        ActivityCompat.requestPermissions(this,
+                new String[]{permissionName}, permissionRequestCode);
+    }
 
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode,
+            String permissions[],
+            int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case 1:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    Toast.makeText(BleDeviceActivity.this, "Bluetooth access granted", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(BleDeviceActivity.this, "Bluetooth access denied!!!", Toast.LENGTH_SHORT).show();
+                }
+            case 2:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    Toast.makeText(BleDeviceActivity.this, "Location access granted", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(BleDeviceActivity.this, "Location access denied!!!", Toast.LENGTH_SHORT).show();
+                }
+            case 3:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    Toast.makeText(BleDeviceActivity.this, "Bluetooth admin access granted", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(BleDeviceActivity.this, "Bluetooth admin access denied!!!", Toast.LENGTH_SHORT).show();
+                }
+        }
+    }
 }

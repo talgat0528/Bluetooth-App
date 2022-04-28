@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -56,18 +57,11 @@ public class MainActivity extends AppCompatActivity {
 
                 } else {
                     if (bluetoothAdapter.isEnabled()) {
-                        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                            // TODO: Consider calling
-                            //    ActivityCompat#requestPermissions
-                            // here to request the missing permissions, and then overriding
-                            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                            //                                          int[] grantResults)
-                            // to handle the case where the user grants the permission. See the documentation
-                            // for ActivityCompat#requestPermissions for more details.
+                        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
                             requestPermission(Manifest.permission.BLUETOOTH,1);
                         }
                         bluetoothManager.getAdapter().disable();
-
+                        switchBluetooth.setText("Off");
                     }
 
                 }
@@ -150,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
                     Toast.makeText(MainActivity.this, "Permission to turn off Granted!", Toast.LENGTH_SHORT).show();
-                    switchBluetooth.setText("Off");
+
                 } else {
                     Toast.makeText(MainActivity.this, "Permission to turn off Denied!!!", Toast.LENGTH_SHORT).show();
                 }

@@ -46,7 +46,6 @@ public class DeviceRecViewAdapter extends RecyclerView.Adapter<DeviceRecViewAdap
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(mContext,DeviceActivity.class);
-                //intent.putExtra(DEVICE_NAME, devices.get(holder.getAdapterPosition()).getName());
                 intent.putExtra(DEVICE_ADDRESS, devices.get(holder.getAdapterPosition()).getAddress());
                 mContext.startActivity(intent);
             }
@@ -62,7 +61,19 @@ public class DeviceRecViewAdapter extends RecyclerView.Adapter<DeviceRecViewAdap
         this.devices = devices;
         notifyDataSetChanged();
     }
-
+    public void setOneDevice(Device item) {
+        boolean containsItem = false;
+        for(Device dev : this.devices) {
+            if(dev.getName().equals(item.getName())) {
+                containsItem = true;
+                break;
+            }
+        }
+        if(!containsItem) {
+            this.devices.add(item);
+            notifyDataSetChanged();
+        }
+    }
     public class ViewHolder extends RecyclerView.ViewHolder {
         private CardView parent;
         private TextView txtName;

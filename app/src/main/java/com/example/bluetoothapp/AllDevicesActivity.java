@@ -44,15 +44,22 @@ public class AllDevicesActivity extends AppCompatActivity {
     private static final long SCAN_PERIOD = 10000;
     Set<BluetoothDevice> pairedDevices;
     ArrayList<Device> devices = new ArrayList<>();
+    public static int BLUETOOTH_PERMISSION = 1;
+    public static int LOCATION_PERMISSION = 2;
+    public static int BLUETOOTH_ADMIN_PERMISSION = 3;
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_all_devices);
 
+
         Intent intent = getIntent();
         if (intent != null) {
             whichBluetooth = intent.getStringExtra(WHICH_BLUETOOTH);
+        } else {
+            finish();
         }
 
         adapter = new DeviceRecViewAdapter(this);
@@ -71,15 +78,13 @@ public class AllDevicesActivity extends AppCompatActivity {
         } else {
             retrieveBondedDevices();
 
-            //bluetoothAdapter.startDiscovery();
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED) {
+                requestPermission(Manifest.permission.BLUETOOTH_ADMIN, BLUETOOTH_ADMIN_PERMISSION);
+            }
+            bluetoothAdapter.startDiscovery();
         }
-
-
-
-
-
-
     }
+
     private void scanLeDevice() {
         if (!scanning) {
             // Stops scanning after a predefined scan period.
@@ -87,6 +92,9 @@ public class AllDevicesActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     scanning = false;
+                    if (ActivityCompat.checkSelfPermission(AllDevicesActivity.this, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermission(Manifest.permission.BLUETOOTH_ADMIN, BLUETOOTH_ADMIN_PERMISSION);
+                    }
                     bluetoothLeScanner.stopScan(leScanCallback);
                 }
             }, SCAN_PERIOD);
@@ -98,17 +106,29 @@ public class AllDevicesActivity extends AppCompatActivity {
             bluetoothLeScanner.stopScan(leScanCallback);
         }
     }
+
     // Device scan callback.
     private ScanCallback leScanCallback =
             new ScanCallback() {
                 @Override
                 public void onScanResult(int callbackType, ScanResult result) {
                     super.onScanResult(callbackType, result);
-                    devices.add(new Device(result.getDevice().getName(),result.getDevice().getAddress()));
-                    adapter.setDevices(devices);
+                    if (ActivityCompat.checkSelfPermission(AllDevicesActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermission(Manifest.permission.BLUETOOTH, BLUETOOTH_PERMISSION);
+                    }
+                    // TODO : fix a name returning null
+                    if(result.getDevice().getName() == null) {
+                        adapter.setOneDevice(new Device("unknown", result.getDevice().getAddress()));
+                    } else {
+                        adapter.setOneDevice(new Device(result.getDevice().getName(), result.getDevice().getAddress()));
+                    }
                 }
             };
+
     private void retrieveBondedDevices() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
+            requestPermission(Manifest.permission.BLUETOOTH, BLUETOOTH_PERMISSION);
+        }
         pairedDevices = bluetoothAdapter.getBondedDevices();
 
         if (pairedDevices.size() > 0) {
@@ -133,48 +153,18 @@ public class AllDevicesActivity extends AppCompatActivity {
                 // Discovery has found a device. Get the BluetoothDevice
                 // object and its info from the Intent.
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
                 if (ActivityCompat.checkSelfPermission(AllDevicesActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
-                    requestPermission(Manifest.permission.BLUETOOTH, 1);
-                    //return;
+                    requestPermission(Manifest.permission.BLUETOOTH, BLUETOOTH_PERMISSION);
                 }
-                //String deviceName = device.getName();
-                //String deviceHardwareAddress = device.getAddress(); // MAC address
-                /*if (device1.getBondState()!=BluetoothDevice.BOND_BONDED)
-                {
-
-                }*/
-                Device item = new Device(device.getName(), device.getAddress());
-                item.setBtdevice(device);
-                boolean containsItem = false;
-                for(Device dev : devices) {
-                    if(dev.getName().equals(item.getName())) {
-                        containsItem = true;
-                        break;
-                    }
+                if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+                    adapter.setOneDevice(new Device(device.getName(), device.getAddress()));
                 }
-                if(!containsItem) {
-
-                    devices.add(item);
-                    item.setBtdevice(device);
-                    adapter.setDevices(devices);
-
-                }
-
-
             }
         }
     };
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void init() {
-        bluetoothManager = getSystemService(BluetoothManager.class);
-        //bluetoothAdapter = bluetoothManager.getAdapter();
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
     }
@@ -193,16 +183,29 @@ public class AllDevicesActivity extends AppCompatActivity {
             case 1:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    //Toast.makeText(AllDevicesActivity.this, "access granted", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AllDevicesActivity.this, "Bluetooth access granted", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(AllDevicesActivity.this, "access denied!!!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AllDevicesActivity.this, "Bluetooth access denied!!!", Toast.LENGTH_SHORT).show();
+                }
+            case 2:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    Toast.makeText(AllDevicesActivity.this, "Location access granted", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(AllDevicesActivity.this, "Location access denied!!!", Toast.LENGTH_SHORT).show();
+                }
+            case 3:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    Toast.makeText(AllDevicesActivity.this, "Bluetooth admin access granted", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(AllDevicesActivity.this, "Bluetooth admin access denied!!!", Toast.LENGTH_SHORT).show();
                 }
         }
     }
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         // Don't forget to unregister the ACTION_FOUND receiver.
         unregisterReceiver(receiver);
     }

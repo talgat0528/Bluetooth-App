@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Bluetooth App</string>
+    <string name="unknown_service">Service</string>
+    <string name="unknown_characteristic">Characteristics</string>
 </resources>
