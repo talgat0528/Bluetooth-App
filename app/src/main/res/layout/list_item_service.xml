@@ -3,23 +3,16 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:id="@+id/parent">
+    android:id="@+id/service_parent">
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ImageView
-            android:id="@+id/imgDevice"
-            android:layout_width="150dp"
-            android:layout_height="50dp"
-            android:src="@drawable/ic_bluetooth" />
-
         <TextView
-            android:id="@+id/txtDeviceName"
+            android:id="@+id/txtService"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@+id/imgDevice"
-            android:text="device name"
+            android:text="Services and Characteristics"
             android:textSize="16sp"
             android:textStyle="bold" />
     </RelativeLayout>

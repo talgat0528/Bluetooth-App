@@ -8,7 +8,8 @@
         <entry key="app/src/main/res/layout/activity_device.xml" value="0.33" />
         <entry key="app/src/main/res/layout/activity_history.xml" value="0.1984375" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.33" />
-        <entry key="app/src/main/res/layout/list_item_device.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/list_item_device.xml" value="0.1" />
+        <entry key="app/src/main/res/layout/list_item_service.xml" value="0.25" />
       </map>
     </option>
   </component>

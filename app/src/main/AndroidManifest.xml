@@ -22,6 +22,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.BluetoothApp">
+        <service android:name=".BluetoothLeService"/>
         <activity
             android:name=".BleDeviceActivity"
             android:exported="false" />

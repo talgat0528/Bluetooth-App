@@ -19,6 +19,7 @@ import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.Serializable;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 
 public class DeviceRecViewAdapter extends RecyclerView.Adapter<DeviceRecViewAdapter.ViewHolder> {
@@ -45,9 +46,16 @@ public class DeviceRecViewAdapter extends RecyclerView.Adapter<DeviceRecViewAdap
         holder.parent.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(mContext,DeviceActivity.class);
+                String deviceType = devices.get(holder.getAdapterPosition()).getDeviceType();
+                Intent intent;
+                if(deviceType.equals("BLE")) {
+                    intent = new Intent(mContext, BleDeviceActivity.class);
+                } else {
+                    intent = new Intent(mContext,DeviceActivity.class);
+                }
                 intent.putExtra(DEVICE_ADDRESS, devices.get(holder.getAdapterPosition()).getAddress());
                 mContext.startActivity(intent);
+
             }
         });
     }
@@ -63,6 +71,9 @@ public class DeviceRecViewAdapter extends RecyclerView.Adapter<DeviceRecViewAdap
     }
     public void setOneDevice(Device item) {
         boolean containsItem = false;
+        if(item == null || this.devices == null) {
+            return;
+        }
         for(Device dev : this.devices) {
             if(dev.getName().equals(item.getName())) {
                 containsItem = true;

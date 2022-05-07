@@ -1,20 +1,35 @@
 package com.example.bluetoothapp;
 
-import android.bluetooth.BluetoothDevice;
-
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class Device implements Serializable {
     private String name;
     private String address;
-    private BluetoothDevice btdevice;
+    private ArrayList<BleService> bleServices;
+    private String deviceType;
 
-    public BluetoothDevice getBtdevice() {
-        return btdevice;
+    public Device(String name, String address, String deviceType) {
+        this.name = name;
+        this.address = address;
+        this.deviceType = deviceType;
     }
 
-    public void setBtdevice(BluetoothDevice btdevice) {
-        this.btdevice = btdevice;
+    public String getDeviceType() {
+        return deviceType;
+    }
+
+    public void setDeviceType(String deviceType) {
+        this.deviceType = deviceType;
+    }
+
+
+    public ArrayList<BleService> getServices() {
+        return bleServices;
+    }
+
+    public void setServices(ArrayList<BleService> bleServices) {
+        this.bleServices = bleServices;
     }
 
     public Device(String name, String address) {

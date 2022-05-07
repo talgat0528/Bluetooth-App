@@ -118,9 +118,9 @@ public class AllDevicesActivity extends AppCompatActivity {
                     }
                     // TODO : fix a name returning null
                     if(result.getDevice().getName() == null) {
-                        adapter.setOneDevice(new Device("unknown", result.getDevice().getAddress()));
+                        adapter.setOneDevice(new Device("unknown", result.getDevice().getAddress(), "BLE"));
                     } else {
-                        adapter.setOneDevice(new Device(result.getDevice().getName(), result.getDevice().getAddress()));
+                        adapter.setOneDevice(new Device(result.getDevice().getName(), result.getDevice().getAddress(), "BLE"));
                     }
                 }
             };
@@ -134,7 +134,7 @@ public class AllDevicesActivity extends AppCompatActivity {
         if (pairedDevices.size() > 0) {
             // There are paired devices. Get the name and address of each paired device.
             for (BluetoothDevice device : pairedDevices) {
-                devices.add(new Device(device.getName(), device.getAddress()));
+                devices.add(new Device(device.getName(), device.getAddress(), "NOTBLE"));
             }
             adapter.setDevices(devices);
         }
@@ -158,7 +158,7 @@ public class AllDevicesActivity extends AppCompatActivity {
                     requestPermission(Manifest.permission.BLUETOOTH, BLUETOOTH_PERMISSION);
                 }
                 if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
-                    adapter.setOneDevice(new Device(device.getName(), device.getAddress()));
+                    adapter.setOneDevice(new Device(device.getName(), device.getAddress(), "NOTBLE"));
                 }
             }
         }
