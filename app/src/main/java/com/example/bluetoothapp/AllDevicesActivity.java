@@ -183,21 +183,21 @@ public class AllDevicesActivity extends AppCompatActivity {
             case 1:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    Toast.makeText(AllDevicesActivity.this, "Bluetooth access granted", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(AllDevicesActivity.this, "Bluetooth access granted", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(AllDevicesActivity.this, "Bluetooth access denied!!!", Toast.LENGTH_SHORT).show();
                 }
             case 2:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    Toast.makeText(AllDevicesActivity.this, "Location access granted", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(AllDevicesActivity.this, "Location access granted", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(AllDevicesActivity.this, "Location access denied!!!", Toast.LENGTH_SHORT).show();
                 }
             case 3:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    Toast.makeText(AllDevicesActivity.this, "Bluetooth admin access granted", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(AllDevicesActivity.this, "Bluetooth admin access granted", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(AllDevicesActivity.this, "Bluetooth admin access denied!!!", Toast.LENGTH_SHORT).show();
                 }

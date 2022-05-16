@@ -23,11 +23,17 @@ public class BleService {
         this.characteristicUuids = characteristicUuids;
     }
 
-    @Override
+   /* @Override
     public String toString() {
         return "BleService{" +
                 "serviceUuid=" + serviceUuid +
                 ", characteristicUuids=" + characteristicUuids +
                 '}';
+    }*/
+
+    @Override
+    public String toString() {
+        return "{\n" + "\"uuid\": \"" +  serviceUuid.get("uuid") +
+                "\", \"characteristics\": " + characteristicUuids.get("characteristics") + "\n}" + "\n";
     }
 }

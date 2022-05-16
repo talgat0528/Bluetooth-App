@@ -29,8 +29,11 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.View;
 import android.widget.Adapter;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -43,6 +46,10 @@ public class BleDeviceActivity extends AppCompatActivity {
     private ServiceRecViewAdapter adapter;
     private BluetoothLeService bluetoothService;
     private String deviceAddress, deviceName;
+    private Button btnConnectToDevice, btnDiscFromDevice;
+    private TextView txtDeviceTitle;
+    private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    public BluetoothDevice btDevice;
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -73,24 +80,55 @@ public class BleDeviceActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
+
+        initViews();
+
         Intent intent = getIntent();
         if (intent != null) {
             deviceAddress = intent.getStringExtra(DEVICE_ADDRESS);
         } else {
             finish();
         }
+        btDevice = bluetoothAdapter.getRemoteDevice(deviceAddress);
+
+        deviceName = btDevice.getName();
+        txtDeviceTitle.setText(deviceName);
+        btnConnectToDevice.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(BleDeviceActivity.this, "CONNECTING. PLEASE WAIT.", Toast.LENGTH_SHORT).show();
+                startConnection();
+            }
+        });
+        btnDiscFromDevice.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(bluetoothService != null) {
+                    bluetoothService.disconnectGatt();
+                    unbindService(serviceConnection);
+                }
+            }
+        });
         adapter = new ServiceRecViewAdapter(this);
         servicesRecView = findViewById(R.id.srvcLstView);
         servicesRecView.setAdapter(adapter);
         servicesRecView.setLayoutManager(new LinearLayoutManager(this));
-        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        /*Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         if(bindService(gattServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE) == false) {
             Toast.makeText(this, "SOMETHING WRONG", Toast.LENGTH_SHORT).show();
-        }
+        }*/
 
     }
+    private void startConnection() {
+        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        bindService(gattServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-
+    }
+    private void initViews() {
+        txtDeviceTitle = findViewById(R.id.txtDeviceTitle);
+        btnConnectToDevice = findViewById(R.id.btnConnectToDevcie);
+        btnDiscFromDevice = findViewById(R.id.btnDiscFromDevice);
+    }
     private final BroadcastReceiver gattUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -99,10 +137,15 @@ public class BleDeviceActivity extends AppCompatActivity {
                 //connected = true;
                 //updateConnectionState(R.string.connected);
                 Toast.makeText(context, "GATT CONNECTED", Toast.LENGTH_SHORT).show();
+                btnConnectToDevice.setVisibility(View.GONE);
+                btnDiscFromDevice.setVisibility(View.VISIBLE);
+
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 //connected = false;
                 //updateConnectionState(R.string.disconnected);
-                Toast.makeText(context, "GATT NOT CONNECTED", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "GATT DISCONNECTED", Toast.LENGTH_SHORT).show();
+                btnConnectToDevice.setVisibility(View.VISIBLE);
+                btnDiscFromDevice.setVisibility(View.GONE);
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 // Show all the supported services and characteristics on the user interface.
                 Toast.makeText(context, "SERVICES DISCOVERED", Toast.LENGTH_SHORT).show();
@@ -129,7 +172,7 @@ public class BleDeviceActivity extends AppCompatActivity {
             // Loops through available Characteristics.
             for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
                 uuid = gattCharacteristic.getUuid().toString();
-                charasUuids.add(uuid);
+                charasUuids.add("\"" + uuid +"\"");
             }
             HashMap<String, ArrayList<String>> charasUuidHash = new HashMap<>();
             charasUuidHash.put("characteristics", charasUuids);
@@ -138,7 +181,9 @@ public class BleDeviceActivity extends AppCompatActivity {
         }
         device.setServices(bleServices);
         adapter.setServices(bleServices);
-
+        // send data to cloud
+        SendToCloudHelper sendToCloudHelper = new SendToCloudHelper(deviceName, deviceAddress, bleServices.toString());
+        sendToCloudHelper.sendData();
     }
 
     @Override
@@ -162,6 +207,7 @@ public class BleDeviceActivity extends AppCompatActivity {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
         return intentFilter;
     }
     private void requestPermission(String permissionName, int permissionRequestCode) {

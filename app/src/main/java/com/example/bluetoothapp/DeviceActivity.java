@@ -15,14 +15,12 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewStub;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.UUID;
 
 public class DeviceActivity extends AppCompatActivity {
@@ -93,12 +91,12 @@ public class DeviceActivity extends AppCompatActivity {
                     DatabaseHelper databaseHelper = new DatabaseHelper(DeviceActivity.this);
                     boolean b = databaseHelper.addDevice(new Device(btDevice.getName(), btDevice.getAddress()));
                     Toast.makeText(DeviceActivity.this, "Data added to the local database: " + b, Toast.LENGTH_SHORT).show();
-                    SendToCloudHelper sendToCloudHelper = new SendToCloudHelper();
+                    //SendToCloudHelper sendToCloudHelper = new SendToCloudHelper(name, address, services);
                     if (ActivityCompat.checkSelfPermission(DeviceActivity.this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED) {
                         requestPermission(Manifest.permission.INTERNET, 1);
 
                     }
-                    sendToCloudHelper.sendData();
+                    //sendToCloudHelper.sendData();
                     break;
                 case STATE_CONNECTION_FAILED:
                     //set the text

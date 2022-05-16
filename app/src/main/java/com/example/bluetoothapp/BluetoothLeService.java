@@ -77,9 +77,14 @@ public class BluetoothLeService extends Service {
             return;
         }
         bluetoothGatt.close();
+
         bluetoothGatt = null;
     }
-
+    public void disconnectGatt() {
+        if (bluetoothGatt != null) {
+            bluetoothGatt.disconnect();
+        }
+    }
     public boolean connect(final String address) {
         if (bluetoothAdapter == null || address == null) {
             Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
@@ -88,7 +93,6 @@ public class BluetoothLeService extends Service {
 
         try {
             final BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
-
             bluetoothGatt = device.connectGatt(this, false, bluetoothGattCallback);
             return true;
         } catch (IllegalArgumentException exception) {
@@ -107,6 +111,7 @@ public class BluetoothLeService extends Service {
                 broadcastUpdate(ACTION_GATT_CONNECTED);
                 // Attempts to discover services after successful connection.
                 bluetoothGatt.discoverServices();
+
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 // disconnected from the GATT Server
                 connectionState = STATE_DISCONNECTED;
@@ -116,8 +121,10 @@ public class BluetoothLeService extends Service {
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+                Log.w(TAG, "onServicesDiscovered received: " + status + " and " + BluetoothGatt.GATT_SUCCESS);
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
             }

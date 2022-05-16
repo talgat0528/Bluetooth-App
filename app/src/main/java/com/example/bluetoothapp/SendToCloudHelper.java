@@ -3,8 +3,6 @@ package com.example.bluetoothapp;
 import android.util.Log;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -16,14 +14,21 @@ import okhttp3.Response;
 
 public class SendToCloudHelper {
 
-
+    private String name, address;
+    private String services;
     public static final String mockServer = "https://8a56f495-e1ec-4849-941c-8aab59c4631f.mock.pstmn.io/device";
-    // TODO: Send actual data
+
+    public SendToCloudHelper(String name, String address, String services) {
+        this.name = name;
+        this.address = address;
+        this.services = services;
+    }
+
     public void sendData() {
         OkHttpClient client = new OkHttpClient().newBuilder()
                 .build();
         MediaType mediaType = MediaType.parse("application/json");
-        RequestBody body = RequestBody.create(mediaType, "{\n    \"name\": \"deviceName\",\n    \"address\": \"deviceAddress\",\n    \"services\": [\n        {\n        \"uuid\": \"serviceUUID\",\n        \"characteristics\": [\"characteristic1UUID\", \"characteristic2UUID\"]\n        }\n    ]\n}");
+        RequestBody body = RequestBody.create(mediaType, String.format("{\n    \"name\": \"%s\",\n    \"address\": \"%s\",\n    \"services\": [\n %s]\n}",name,address,services));
         Request request = new Request.Builder()
                 .url(mockServer)
                 .method("PUT", body)
