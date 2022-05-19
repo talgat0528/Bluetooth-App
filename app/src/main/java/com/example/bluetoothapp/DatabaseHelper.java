@@ -16,7 +16,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String DEVICE_TABLE = "DEVICE_TABLE";
     public static final String DEVICE_NAME = "DEVICE_NAME";
     public static final String DEVICE_ADDRESS = "DEVICE_ADDRESS";
-
+    public static final String DEVICE_TYPE = "DEVICE_TYPE";
     public DatabaseHelper(@Nullable Context context) {
         super(context, "devices.db", null, 1);
     }
@@ -24,7 +24,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     //onCreate is calls the first time a database is accessed.
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
-        String createTableStatement = "CREATE TABLE " + DEVICE_TABLE + "(" + DEVICE_NAME + " TEXT, " + DEVICE_ADDRESS + " TEXT)";
+        //String createTableStatement = "CREATE TABLE " + DEVICE_TABLE + "(" + DEVICE_NAME + " TEXT, " + DEVICE_ADDRESS + " TEXT)";
+        String createTableStatement = "CREATE TABLE " + DEVICE_TABLE + "(" + DEVICE_NAME + " TEXT, " + DEVICE_ADDRESS + " TEXT, " + DEVICE_TYPE + " TEXT)";
         sqLiteDatabase.execSQL(createTableStatement);
     }
 
@@ -41,6 +42,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         ContentValues cv = new ContentValues();
         cv.put(DEVICE_NAME, device.getName());
         cv.put(DEVICE_ADDRESS,device.getAddress());
+        cv.put(DEVICE_TYPE,device.getDeviceType());
         long insert = db.insert(DEVICE_TABLE, null, cv);
         if(insert == -1) {
             return false;
@@ -61,7 +63,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             do {
                 String deviceName = cursor.getString(0);
                 String deviceAddress = cursor.getString(1);
-                devices.add(new Device(deviceName,deviceAddress));
+                String deviceType = cursor.getString(2);
+                devices.add(new Device(deviceName,deviceAddress,deviceType));
             } while (cursor.moveToNext());
         }
         // clean up

@@ -181,6 +181,10 @@ public class BleDeviceActivity extends AppCompatActivity {
         }
         device.setServices(bleServices);
         adapter.setServices(bleServices);
+        // save data to local db
+        DatabaseHelper databaseHelper = new DatabaseHelper(this);
+        boolean b = databaseHelper.addDevice(new Device(deviceName, deviceAddress, "BLE"));
+        Toast.makeText(this, "Data added to the local database: " + b, Toast.LENGTH_SHORT).show();
         // send data to cloud
         SendToCloudHelper sendToCloudHelper = new SendToCloudHelper(deviceName, deviceAddress, bleServices.toString());
         sendToCloudHelper.sendData();

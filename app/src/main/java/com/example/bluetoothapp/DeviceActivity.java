@@ -89,7 +89,7 @@ public class DeviceActivity extends AppCompatActivity {
                     btnConnectToDevice.setVisibility(View.GONE);
                     btnDiscFromDevice.setVisibility(View.VISIBLE);
                     DatabaseHelper databaseHelper = new DatabaseHelper(DeviceActivity.this);
-                    boolean b = databaseHelper.addDevice(new Device(btDevice.getName(), btDevice.getAddress()));
+                    boolean b = databaseHelper.addDevice(new Device(btDevice.getName(), btDevice.getAddress(),"CLASSIC"));
                     Toast.makeText(DeviceActivity.this, "Data added to the local database: " + b, Toast.LENGTH_SHORT).show();
                     //SendToCloudHelper sendToCloudHelper = new SendToCloudHelper(name, address, services);
                     if (ActivityCompat.checkSelfPermission(DeviceActivity.this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED) {
